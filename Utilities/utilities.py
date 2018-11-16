@@ -12,8 +12,8 @@ from astropy.table import Table
 from astropy.table import Column
 
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 
 import numpy as np
 
@@ -24,20 +24,9 @@ import itertools
 import csv
 import pandas as pd
 import requests
-import threading
 import time
 
-def animate():
-    done = False
-    print(chr(27) + "[2J")
-    for c in itertools.cycle(['|', '/', '-', '\\']):
-        if done:
-            break
-        sys.stdout.write('\rloading ' + c)
-        sys.stdout.flush()
-        time.sleep(0.1)
-    print(chr(27) + "[2J")
-    sys.stdout.write('\rDone!')
+from progress.bar import ChargingBar,FillingCirclesBar
 
 def csv_to_ascii(inFile,outFile):
     """
@@ -83,14 +72,16 @@ def get_coords(gals):
             start_coord: list of coordinates corresponding to center of galaxies in 'gals'
     """
     start_coord = []
+    bar = FillingCirclesBar('Loading galaxies', max = len(gals))
     for i in gals[:]: #gets all valid galaxies
         try:
-            print(i)
             tempCoord = SkyCoord.from_name(i, frame = 'icrs')
             start_coord.append(tempCoord)
+            bar.next()
         except NameResolveError:
             print('Skipping',i,'because it couldn\'t be found.')
             gals.remove(i)
+    bar.finish()
     return(gals,start_coord)
 
 def coord_breakup(coord):
@@ -204,17 +195,21 @@ def tableFill(distance, ra, dec, appender, gal_name):
     curVal = [None] *4 #n = 0, e = 1, s = 2, w = 3
     cardinals = [None] *4 #n = 0, e = 1, s = 2, w = 3
     #get values for each arcminute
+    print('\nGetting Av values for',gal_name)
+    bar = ChargingBar('Fetching', max = distance+1)
     for arc_minute in range(0,distance+1):
         cardinals = fourCoord(arc_minute, ra, dec, cardinals)
         t.add_row()
         t[arc_minute][0]=arc_minute
         for i in range(0,4):
-            C = coordinates.SkyCoord(cardinals[i])
-            table = IrsaDust.get_extinction_table(C.fk5, show_progress = False)
+            C = coordinates.SkyCoord(cardinals[i], frame = 'fk5')
+            table = IrsaDust.get_extinction_table(C,show_progress = False)
             curVal[i] = (table['A_SandF'][2])
             t[arc_minute][i+1] = curVal[i]
             curVal = curVal[:]
         a_v.append(curVal)
+        bar.next()
+    bar.finish()
 
     t.add_row()
     for i in range(0,5): #this adds a blank line to the table to separate queries

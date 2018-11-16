@@ -13,9 +13,9 @@
  #   limitations under the License.
 
 
- """
- REDO ALL THIS, IT LOOKS LIKE CRAP
- """
+"""
+REDO ALL THIS, IT LOOKS LIKE CRAP
+"""
 
 
 from astropy import units as u
@@ -23,6 +23,9 @@ from astropy import coordinates
 
 from astroquery.irsa_dust import IrsaDust
 from astropy.coordinates import Angle,ICRS,SkyCoord
+from astroquery.irsa_dust import IrsaDust
+import astropy.coordinates as coord
+import astropy.units as u
 
 import math
 import os.path
